@@ -16,8 +16,8 @@ public class JavaMailer implements Mailer {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(
-                        "ocid1.user.oc1..aaaaaaaaqeq5m2bzcb52m4xtelmpfprirgc6fiomcgtvfvflgxa2h4tnd4oq@ocid1.tenancy.oc1..aaaaaaaahq452lviqvlwh6wrsopmgcmch7lfaa5w2kw2q233k7nxkg2bhlna.6q.com",
-                        "Pw3-{jEm-sqNAx5kHq>n"
+                    System.getenv("MAIL_USER"),
+                    System.getenv("MAIL_PASS")
                 );
             }
         });
@@ -26,8 +26,8 @@ public class JavaMailer implements Mailer {
     private Properties setupConnection() {
         Properties props = new Properties();
 
-        props.put("mail.smtp.host", "smtp.email.us-phoenix-1.oci.oraclecloud.com");
-        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.host", System.getenv("MAIL_HOST"));
+        props.put("mail.smtp.port", System.getenv("MAIL_PORT"));
         props.put("mail.smtp.auth", "true"); // if authentication is required
         props.put("mail.smtp.starttls.enable", "true");
 
