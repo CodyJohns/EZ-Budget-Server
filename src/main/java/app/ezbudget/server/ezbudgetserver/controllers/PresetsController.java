@@ -15,6 +15,7 @@ import com.google.gson.reflect.TypeToken;
 
 import app.ezbudget.server.ezbudgetserver.dao.DAOFactory;
 import app.ezbudget.server.ezbudgetserver.model.CalculatedExpense;
+import app.ezbudget.server.ezbudgetserver.model.NameEdit;
 import app.ezbudget.server.ezbudgetserver.model.VariableExpense;
 import app.ezbudget.server.ezbudgetserver.service.BudgetService;
 
@@ -95,6 +96,21 @@ public class PresetsController {
 
         try {
             return ResponseEntity.ok(gson.toJson(service.updateVariableExpenses(authtoken, presets).getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/update/variable/v2")
+    public ResponseEntity<String> updateVariablePresetsV2(@RequestHeader("Authorization") String authtoken, @RequestParam("json") String json, @RequestParam("name_edits") String name_edits) {
+
+        List<VariableExpense> presets = gson.fromJson(json, new TypeToken<List<VariableExpense>>() {}.getType());
+        List<NameEdit> nameEdits = gson.fromJson(name_edits, new TypeToken<List<NameEdit>>() {}.getType());
+
+        BudgetService service = new BudgetService(factory);
+
+        try {
+            return ResponseEntity.ok(gson.toJson(service.updateVariableExpensesV2(authtoken, presets, nameEdits).getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }

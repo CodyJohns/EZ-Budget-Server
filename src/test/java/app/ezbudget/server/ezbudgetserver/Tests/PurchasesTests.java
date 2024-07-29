@@ -1,10 +1,13 @@
 package app.ezbudget.server.ezbudgetserver.Tests;
 
 import app.ezbudget.server.ezbudgetserver.dao.PurchaseDAO;
+import app.ezbudget.server.ezbudgetserver.dao.UserDAO;
 import app.ezbudget.server.ezbudgetserver.exceptions.DailyItemNotFoundException;
+import app.ezbudget.server.ezbudgetserver.model.NameEdit;
 import app.ezbudget.server.ezbudgetserver.model.Purchase;
 import app.ezbudget.server.ezbudgetserver.model.PurchasedExpense;
 import app.ezbudget.server.ezbudgetserver.model.VariableExpense;
+import app.ezbudget.server.ezbudgetserver.service.BudgetService;
 import app.ezbudget.server.ezbudgetserver.service.PurchasesService;
 import app.ezbudget.server.ezbudgetserver.util.HTTPResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +24,7 @@ import static org.mockito.Mockito.when;
 public class PurchasesTests extends BaseTest {
 
     private PurchaseDAO pDAO;
+    private UserDAO uDAO;
 
     @Override
     public void otherSetup() {
@@ -74,6 +78,39 @@ public class PurchasesTests extends BaseTest {
         assertTrue(response.getData().containsKey("Test2"));
         assertTrue(response.getData().containsKey("Test3"));
         assertFalse(response.getData().containsKey("Test4"));
+    }
+
+    @Test
+    void testGetPurchasesNameChange() {
+        /**
+         * If the user changes the name of an item it should still have the same purchases
+         */
+
+        List<VariableExpense> newExpenses = List.of(
+                new VariableExpense(0, "Test1", 0F, 10F),
+                new VariableExpense(1, "Test2", 0F, 20F),
+                new VariableExpense(2, "Test10", 0F, 30F)
+        );
+
+        List<NameEdit> nameEdits = List.of(
+            new NameEdit(
+                new VariableExpense(0, "Test3", 0F, 30F), 
+                new VariableExpense(1, "Test10", 0F, 30F)
+            )
+        );
+
+        BudgetService service = new BudgetService(factory).enableDebugMode(true);
+
+        HTTPResponse<Map<String, PurchasedExpense>> response = service.updateVariableExpensesV2(user.getAuthtoken(), newExpenses, nameEdits);
+
+        assertTrue(response.getData().containsKey("Test1"));
+        assertTrue(response.getData().containsKey("Test2"));
+
+        assertTrue(response.getData().get("Test1").getPurchases().size() > 0);
+        assertTrue(response.getData().get("Test2").getPurchases().size() > 0);
+        assertTrue(response.getData().get("Test3").getPurchases().size() > 0);
+        assertTrue(response.getData().get("Test10").getPurchases().size() > 0);
+
     }
 
     @Test
