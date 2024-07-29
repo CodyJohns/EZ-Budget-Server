@@ -89,13 +89,17 @@ public class PurchasesTests extends BaseTest {
         List<VariableExpense> newExpenses = List.of(
                 new VariableExpense(0, "Test1", 0F, 10F),
                 new VariableExpense(1, "Test2", 0F, 20F),
-                new VariableExpense(2, "Test10", 0F, 30F)
+                new VariableExpense(2, "Test11", 0F, 30F)
         );
 
         List<NameEdit> nameEdits = List.of(
             new NameEdit(
                 new VariableExpense(0, "Test3", 0F, 30F), 
                 new VariableExpense(1, "Test10", 0F, 30F)
+            ),
+            new NameEdit(
+                new VariableExpense(0, "Test10", 0F, 30F), 
+                new VariableExpense(1, "Test11", 0F, 30F)
             )
         );
 
