@@ -83,7 +83,6 @@ public class BudgetService extends JointService {
 
         User user = getTargetUser(this.factory.getUserDAO().getUserByAuthtoken(authtoken));
 
-        //TODO: get the user's purchases to update the key that corresponds to the purchaseexpense with the name edit
         Map<String, PurchasedExpense> purchases = new HashMap<>(this.factory.getPurchaseDAO().getExpensesWithPurchases(user.getAuthtoken()));
 
         for (NameEdit edit : nameEdits) {
@@ -91,6 +90,7 @@ public class BudgetService extends JointService {
             String new_key = edit.new_exp.name;
 
             PurchasedExpense purchasedExpense = purchases.get(old_key);
+            purchasedExpense.name = new_key;
 
             //just copy the value for the old key to the new one
             purchases.put(new_key, purchasedExpense);
