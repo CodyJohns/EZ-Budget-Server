@@ -1,7 +1,6 @@
 package app.ezbudget.server.ezbudgetserver.Tests;
 
 import app.ezbudget.server.ezbudgetserver.dao.PurchaseDAO;
-import app.ezbudget.server.ezbudgetserver.dao.UserDAO;
 import app.ezbudget.server.ezbudgetserver.exceptions.DailyItemNotFoundException;
 import app.ezbudget.server.ezbudgetserver.model.NameEdit;
 import app.ezbudget.server.ezbudgetserver.model.Purchase;
@@ -24,7 +23,6 @@ import static org.mockito.Mockito.when;
 public class PurchasesTests extends BaseTest {
 
     private PurchaseDAO pDAO;
-    private UserDAO uDAO;
 
     @Override
     public void otherSetup() {
@@ -86,12 +84,14 @@ public class PurchasesTests extends BaseTest {
          * If the user changes the name of an item it should still have the same purchases
          */
 
+        // Update list of variables expenses
         List<VariableExpense> newExpenses = List.of(
                 new VariableExpense(0, "Test1", 0F, 10F),
                 new VariableExpense(1, "Test2", 0F, 20F),
                 new VariableExpense(2, "Test11", 0F, 30F)
         );
 
+        // List of name edits in order, bottom are most recent.
         List<NameEdit> nameEdits = List.of(
             new NameEdit(
                 new VariableExpense(0, "Test3", 0F, 30F), 
@@ -114,7 +114,43 @@ public class PurchasesTests extends BaseTest {
         assertTrue(response.getData().get("Test2").getPurchases().size() > 0);
         assertTrue(response.getData().get("Test3").getPurchases().size() > 0);
         assertTrue(response.getData().get("Test10").getPurchases().size() > 0);
+        assertTrue(response.getData().get("Test11").getPurchases().size() > 0);
+    }
 
+    @Test
+    void testGetPurchasesNameCaseChange() {
+
+        user.variable_presets = List.of(
+                new VariableExpense(0, "1 Test", 0F, 10F),
+                new VariableExpense(1, "2 Test", 0F, 20F),
+                new VariableExpense(2, "3 TesT", 0F, 30F)
+        );
+
+        List<Purchase> purchases = List.of(
+                new Purchase(0, "one", 10F, "1/30"),
+                new Purchase(1, "two", 20F, "1/31"),
+                new Purchase(2, "three", 30F, "1/1")
+        );
+
+        //[1 Test, 2 Test, 3 Test, 3 TesT]
+        Map<String, PurchasedExpense> sample = Map.of(
+                "1 Test", new PurchasedExpense(0, "1 Test", 60F, 70F, purchases),
+                "2 Test", new PurchasedExpense(1, "2 Test", 60F, 60F, purchases),
+                "3 Test", new PurchasedExpense(2, "3 Test", 60F, 80F, purchases),
+                "3 TesT", new PurchasedExpense(2, "3 TesT", 60F, 80F, purchases)
+        );
+
+        when(pDAO.getExpensesWithPurchases(Mockito.anyString())).thenReturn(sample);
+
+        PurchasesService service = new PurchasesService(factory);
+
+        HTTPResponse<Map<String, PurchasedExpense>> response = service.getPurchases(user.getAuthtoken());
+
+        System.out.println(response.getData().keySet().toString());
+        assertTrue(response.getData().containsKey("1 Test"));
+        assertTrue(response.getData().containsKey("2 Test"));
+        assertTrue(response.getData().containsKey("3 TesT"));
+        assertFalse(response.getData().containsKey("3 Test"));
     }
 
     @Test

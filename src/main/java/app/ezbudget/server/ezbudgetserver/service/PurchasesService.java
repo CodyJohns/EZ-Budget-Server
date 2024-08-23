@@ -71,7 +71,7 @@ public class PurchasesService extends JointService {
                     boolean found = false;
 
                     for (VariableExpense expense : user.getVariablePresets()) {
-                        if (expense.getName().equalsIgnoreCase(key)) {
+                        if (expense.getName().equals(key)) {
                             found = true;
                             break;
                         }
