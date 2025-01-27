@@ -83,13 +83,17 @@ public class BudgetService extends JointService {
 
         User user = getTargetUser(this.factory.getUserDAO().getUserByAuthtoken(authtoken));
 
-        Map<String, PurchasedExpense> purchases = new HashMap<>(this.factory.getPurchaseDAO().getExpensesWithPurchases(user.getAuthtoken()));
+        Map<String, PurchasedExpense> purchases = this.getExistingOrNewExpensesWithPurchases(user);
 
         for (NameEdit edit : nameEdits) {
             String old_key = edit.old_exp.name;
             String new_key = edit.new_exp.name;
 
             PurchasedExpense purchasedExpense = purchases.get(old_key);
+
+            if (purchasedExpense == null)
+                continue;
+
             purchasedExpense.name = new_key;
 
             //just copy the value for the old key to the new one
@@ -108,6 +112,14 @@ public class BudgetService extends JointService {
             return new HTTPResponse(200, "Updated", purchases);
 
         return new HTTPResponse(200, "Updated");
+    }
+
+    private Map<String, PurchasedExpense> getExistingOrNewExpensesWithPurchases(User user) {
+        try {
+            return new HashMap<>(this.factory.getPurchaseDAO().getExpensesWithPurchases(user.getAuthtoken()));
+        } catch(NullPointerException e) {
+            return new HashMap<>();
+        }
     }
 
     public HTTPResponse getBudgetOverview(String authtoken) {

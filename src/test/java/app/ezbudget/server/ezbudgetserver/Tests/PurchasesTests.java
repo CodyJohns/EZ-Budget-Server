@@ -116,6 +116,40 @@ public class PurchasesTests extends BaseTest {
         assertTrue(response.getData().get("Test10").getPurchases().size() > 0);
         assertTrue(response.getData().get("Test11").getPurchases().size() > 0);
     }
+    
+    @Test
+    void testGetVariableExpensesNullPurchases() {
+        /**
+         * If the user changes the an item after a new month entry has been created
+         * the purchases will not exist so it needs to handle this case
+         */
+        when(pDAO.getExpensesWithPurchases(Mockito.anyString())).thenReturn(null);
+
+        // Update list of variables expenses
+        List<VariableExpense> newExpenses = List.of(
+                new VariableExpense(0, "Test1", 0F, 10F),
+                new VariableExpense(1, "Test2", 0F, 20F),
+                new VariableExpense(2, "Test11", 0F, 30F)
+        );
+
+        // List of name edits in order, bottom are most recent.
+        List<NameEdit> nameEdits = List.of(
+            new NameEdit(
+                new VariableExpense(0, "Test3", 0F, 30F), 
+                new VariableExpense(1, "Test10", 0F, 30F)
+            ),
+            new NameEdit(
+                new VariableExpense(0, "Test10", 0F, 30F), 
+                new VariableExpense(1, "Test11", 0F, 30F)
+            )
+        );
+
+        BudgetService service = new BudgetService(factory).enableDebugMode(true);
+ 
+        assertDoesNotThrow(() -> {
+            service.updateVariableExpensesV2(user.getAuthtoken(), newExpenses, nameEdits);
+        }); 
+    }
 
     @Test
     void testGetPurchasesNameCaseChange() {
