@@ -3,7 +3,6 @@ package app.ezbudget.server.ezbudgetserver.Tests;
 import app.ezbudget.server.ezbudgetserver.model.*;
 import app.ezbudget.server.ezbudgetserver.service.ChartDataService;
 import app.ezbudget.server.ezbudgetserver.service.EntryService;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
