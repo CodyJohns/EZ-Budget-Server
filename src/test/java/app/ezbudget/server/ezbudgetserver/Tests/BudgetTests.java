@@ -1,18 +1,23 @@
 package app.ezbudget.server.ezbudgetserver.Tests;
 
+import app.ezbudget.server.ezbudgetserver.dao.PurchaseDAO;
 import app.ezbudget.server.ezbudgetserver.model.BudgetOverview;
 import app.ezbudget.server.ezbudgetserver.model.CalculatedExpense;
 import app.ezbudget.server.ezbudgetserver.model.Entry;
+import app.ezbudget.server.ezbudgetserver.model.Purchase;
+import app.ezbudget.server.ezbudgetserver.model.PurchasedExpense;
 import app.ezbudget.server.ezbudgetserver.model.VariableExpense;
 import app.ezbudget.server.ezbudgetserver.service.BudgetService;
 import app.ezbudget.server.ezbudgetserver.util.HTTPResponse;
 import com.google.gson.Gson;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,6 +25,7 @@ public class BudgetTests extends BaseTest {
 
     private List<Entry> entries;
     private BudgetService service;
+    private PurchaseDAO purchaseDAO;
 
     @BeforeEach
     void before() {
@@ -89,5 +95,42 @@ public class BudgetTests extends BaseTest {
             HTTPResponse response = service.getBudgetOverview(user.getAuthtoken());
             System.out.println(gson.toJson(response.getData()));
         });
+    }
+
+    @Test
+    void testLoadingVariableExpensesWithTotals() {
+        purchaseDAO = Mockito.mock();
+        Mockito.when(factory.getPurchaseDAO()).thenReturn(purchaseDAO);
+
+        PurchasedExpense exp1 = new PurchasedExpense(4, "Provo Power", 0, 50);
+        PurchasedExpense exp2 = new PurchasedExpense(3, "Dominion Energy", 0, 65);
+        PurchasedExpense exp3 = new PurchasedExpense(2, "Karen’s shopping AMEX", 0, 80, List.of(
+            new Purchase(0, "H&M", 37.7F, "4/14"),
+            new Purchase(1, "Old navy", 36.59F, "4/14")
+        ));
+
+        exp1.is_account = true;
+        exp2.is_account = true;
+
+        Map<String, PurchasedExpense> results = Map.of(
+            "Provo Power", exp1,
+            "Dominion Energy", exp2,
+            "Karen’s shopping AMEX", exp3
+        );
+
+        Mockito.when(purchaseDAO.getExpensesWithPurchases(user.getAuthtoken())).thenReturn(results);
+
+        HTTPResponse response = service.getVariableExpensesWithTotalPurchasesAmount(user.getAuthtoken());
+
+        List<VariableExpense> expenses = (List<VariableExpense>) response.getData();
+
+        for (VariableExpense expense : expenses) {
+            if (expense.is_account) {
+                assertEquals(expense.amount, 0);
+            } else {
+                assertTrue(expense.amount >= 74.29);
+                assertTrue(expense.amount < 74.30);
+            }
+        }
     }
 }

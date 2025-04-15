@@ -46,9 +46,24 @@ public class BudgetService extends JointService {
 
         User user = getTargetUser(this.factory.getUserDAO().getUserByAuthtoken(authtoken));
 
-        List<VariableExpense> presets = new ArrayList<>();
+        List<PurchasedExpense> presets = new ArrayList<>();
 
         presets.addAll(this.factory.getPurchaseDAO().getExpensesWithPurchases(user.getAuthtoken()).values());
+
+        for (PurchasedExpense preset : presets) {
+
+            if (preset.is_account) {
+                preset.amount = 0;
+            } else {
+                float sum = 0;
+
+                for (Purchase purchase : preset.getPurchases()) {
+                    sum += purchase.amount;
+                }
+
+                preset.amount = sum;
+            }
+        }
 
         return new HTTPResponse(200, "Ok", presets);
     }
