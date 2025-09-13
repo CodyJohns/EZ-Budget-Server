@@ -48,6 +48,18 @@ public class UserController {
         }
     }
 
+    @GetMapping("/month-expense-trend")
+    public ResponseEntity<String> getMonthlyExpenseTrend(@RequestHeader("Authorization") String authtoken) {
+        ChartDataService service = new ChartDataService(factory);
+
+        try {
+            return ResponseEntity.ok(gson.toJson(service.getMonthlyExpenseTrend(authtoken).getData()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+    
+
     @GetMapping("/verify/{code}")
     public ResponseEntity<String> verifyUser(@PathVariable("code") String code) {
 

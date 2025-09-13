@@ -15,6 +15,16 @@ public class ChartDataService extends JointService {
         super(factory);
     }
 
+    private float sumTotal(List<? extends Expense> expenses) {
+        float sum = 0;
+
+        for (Expense expense : expenses) {
+            sum += expense.getAmount();
+        }
+
+        return sum;
+    }
+
     public HTTPResponse getIncomeYearly(String authtoken) {
 
         User user = getTargetUser(this.factory.getUserDAO().getUserByAuthtoken(authtoken));
@@ -25,6 +35,21 @@ public class ChartDataService extends JointService {
 
         for (Entry entry : entries) {
             data.add(new ChartData(entry.getMonth(), entry.getGross()));
+        }
+
+        return new HTTPResponse(200, "Ok", data);
+    }
+
+    public HTTPResponse getMonthlyExpenseTrend(String authtoken) {
+        User user = getTargetUser(this.factory.getUserDAO().getUserByAuthtoken(authtoken));
+
+        List<Entry> entries = this.factory.getEntryDAO().getSpecificNumberOfEntries(user.getAuthtoken(), NUM_ENTRIES / 2);
+
+        List<ChartData> data = new ArrayList<>();
+
+        for (Entry entry : entries) {
+            float total = sumTotal(entry.getVariableExpenses()) + sumTotal(entry.getCalculatedExpenses());
+            data.add(new ChartData(entry.getMonth(), total));
         }
 
         return new HTTPResponse(200, "Ok", data);
