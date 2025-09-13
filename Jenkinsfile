@@ -15,13 +15,13 @@ pipeline {
         }
         stage('Docker Build') {
             steps {
-                sh 'docker build -t docker.empire-american.com/${BUILD_NAME} .'
+                sh 'docker build -t docker.western-solutions.dev/${BUILD_NAME} .'
             }
         }
         stage('Deploy') {
             steps {
-                sh 'echo $dockerhub_PSW | docker login https://docker.empire-american.com -u $dockerhub_USR --password-stdin'
-                sh 'docker push docker.empire-american.com/${BUILD_NAME}:latest'
+                sh 'echo $dockerhub_PSW | docker login https://docker.western-solutions.dev -u $dockerhub_USR --password-stdin'
+                sh 'docker push docker.western-solutions.dev/${BUILD_NAME}:latest'
             }
         }
     }
