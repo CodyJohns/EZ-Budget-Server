@@ -3,6 +3,8 @@ package app.ezbudget.server.ezbudgetserver.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import app.ezbudget.server.ezbudgetserver.model.plaid.PlaidItem;
+
 public class User {
 
     public String username;
@@ -18,13 +20,14 @@ public class User {
     public JointAccountData jointData;
     public List<VariableExpense> variable_presets;
     public List<CalculatedExpense> calculated_presets;
+    public List<PlaidItem> items;
 
-    //for testing users
+    // for testing users
     public User(String username, String password, String authtoken, String email) {
         setFields(username, new Password(password), authtoken, email);
     }
 
-    //for creating new users from app
+    // for creating new users from app
     public User(String username, Password password, String authtoken, String email) {
         setFields(username, password, authtoken, email);
     }
@@ -36,6 +39,7 @@ public class User {
         this.email = email;
         this.variable_presets = new ArrayList<>();
         this.calculated_presets = new ArrayList<>();
+        this.items = new ArrayList<>();
         this.entries = 0;
         this.jointData = new JointAccountData();
     }
@@ -72,9 +76,13 @@ public class User {
         return password_change_code;
     }
 
-    public int getNumEntries() { return entries; }
+    public int getNumEntries() {
+        return entries;
+    }
 
-    public void setNumEntries(int entries) { this.entries = entries; }
+    public void setNumEntries(int entries) {
+        this.entries = entries;
+    }
 
     public boolean isEmailReminderEnabled() {
         return email_reminder;
@@ -124,7 +132,17 @@ public class User {
         this.calculated_presets = calculated_presets;
     }
 
-    public JointAccountData getJointData() { return jointData; }
+    public JointAccountData getJointData() {
+        return jointData;
+    }
+
+    public List<PlaidItem> getPlaidAccessTokens() {
+        return items;
+    }
+
+    public void setPlaidAccessTokens(List<PlaidItem> items) {
+        this.items = items;
+    }
 
     @Override
     public String toString() {

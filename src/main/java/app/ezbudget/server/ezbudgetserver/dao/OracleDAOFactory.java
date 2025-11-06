@@ -19,6 +19,7 @@ public class OracleDAOFactory implements DAOFactory {
     private UserDAO userDAO;
     private EntryDAO entryDAO;
     private PurchaseDAO purchaseDAO;
+    private TransactionDAO transactionDAO;
     private Mailer mailer;
     private Database database;
     private Verifier<GoogleIdToken> tokenVerifier;
@@ -74,5 +75,13 @@ public class OracleDAOFactory implements DAOFactory {
             tokenVerifier = new GoogleVerifier();
 
         return tokenVerifier;
+    }
+
+    @Override
+    public TransactionDAO getTransactionDAO() {
+        if(transactionDAO == null)
+            transactionDAO = new OracleTransactionDAO(getDatabase());
+
+        return transactionDAO;
     }
 }
