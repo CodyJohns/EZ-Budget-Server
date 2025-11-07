@@ -6,10 +6,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.http.HttpEntity;
@@ -21,7 +21,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
-import com.google.api.client.util.DateTime;
 import com.google.gson.Gson;
 
 import app.ezbudget.server.ezbudgetserver.dao.DAOFactory;
@@ -196,10 +195,10 @@ public class PlaidService extends JointService {
             throw new RuntimeException("Missing PLAID_CLIENT_ID and/or PLAID_SECRET env variables.");
         }
 
-        Map<String, String> payload = Map.of(
+        Map<String, String> payload = new HashMap<>(Map.of(
                 "client_id", clientId,
                 "secret", secret,
-                "access_token", item.access_token);
+                "access_token", item.access_token));
 
         if (item.cursor != null) {
             payload.put("cursor", item.cursor);
@@ -237,22 +236,28 @@ public class PlaidService extends JointService {
                 .map(item -> item.transaction_id)
                 .collect(Collectors.toSet());
         expense.setPurchases(expense.getPurchases().stream()
-                .filter(exp -> removedIds.contains(exp.transaction_id))
+                .filter(exp -> removedIds.contains(exp.transaction_id)
+                        || removedIds.contains(exp.pending_transaction_id))
                 .collect(Collectors.toList()));
 
         List<Purchase> new_purchases = new ArrayList<>();
         Integer size = expense.getPurchases().size();
         for (TransactionSyncResponse.Transaction transaction : response.added) {
-            if (!transaction.pending) {
-                String[] dateArr = transaction.date.split("-");
-                new_purchases.add(
-                        new Purchase(
-                                size + new_purchases.size(),
-                                transaction.merchant_name,
-                                transaction.amount,
-                                dateArr[1] + "/" + dateArr[2],
-                                transaction.transaction_id));
+            String[] dateArr = transaction.date.split("-");
+            String name = transaction.merchant_name != null ? transaction.merchant_name : transaction.name;
+            String year = dateArr[2];
+            String month = dateArr[1];
+            if (month.startsWith("0") && month.length() > 1) {
+                month = month.substring(1);
             }
+            new_purchases.add(
+                    new Purchase(
+                            size + new_purchases.size(),
+                            name,
+                            transaction.amount,
+                            month + "/" + year,
+                            transaction.pending_transaction_id,
+                            transaction.transaction_id));
         }
         expense.getPurchases().addAll(new_purchases);
         expense.amount = expense.getPurchases().stream()
@@ -260,7 +265,7 @@ public class PlaidService extends JointService {
                 .sum() / 100;
     }
 
-    private void updateUserPurchases(String itemId) {
+    public void updateUserPurchases(String itemId) {
         PlaidItem item = this.factory.getTransactionDAO().getItem(itemId);
         Map<String, PurchasedExpense> expenses = this.factory.getPurchaseDAO()
                 .getExpensesWithPurchases(item.authtoken);

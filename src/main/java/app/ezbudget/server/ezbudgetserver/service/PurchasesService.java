@@ -72,16 +72,15 @@ public class PurchasesService extends JointService {
 
                 while (iterator.hasNext()) {
 
-                    String key = iterator.next().getKey();
+                    Map.Entry<String, PurchasedExpense> entry = iterator.next();
+                    String key = entry.getKey();
+                    PurchasedExpense value = entry.getValue();
 
                     boolean found = false;
 
                     for (VariableExpense expense : user.getVariablePresets()) {
                         if (expense.getName().equals(key)) {
                             found = true;
-                            if (expense.plaid_item_id != null) {
-                                removeItemIds.add(expense.plaid_item_id);
-                            }
                             break;
                         }
                     }
@@ -89,6 +88,9 @@ public class PurchasesService extends JointService {
                     if (!found) {
                         iterator.remove();
                         modified = true;
+                        if (value.plaid_item_id != null) {
+                            removeItemIds.add(value.plaid_item_id);
+                        }
                     }
                 }
             }
@@ -96,8 +98,9 @@ public class PurchasesService extends JointService {
             for (String itemId : removeItemIds) {
                 PlaidItem item = this.factory.getTransactionDAO().getItem(itemId);
                 this.factory.getTransactionDAO().deleteItem(item);
-                user.setPlaidAccessTokens(
-                        user.getPlaidAccessTokens().stream().filter(token -> token.item_id != itemId).toList());
+                List<PlaidItem> filteredItems = user.getPlaidAccessTokens().stream()
+                        .filter(token -> !token.item_id.equals(itemId)).toList();
+                user.setPlaidAccessTokens(filteredItems);
                 plaidService.removeItem(item);
             }
             if (removeItemIds.size() > 0) {
@@ -123,9 +126,7 @@ public class PurchasesService extends JointService {
             // Temp code until I get inngest up and running
             for (String itemId : itemIdsToSync) {
                 try {
-                    // FIXME: why this is returning "Item not found"
-                    PlaidItem item = this.factory.getTransactionDAO().getItem(itemId);
-                    plaidService.transactionsSync(item);
+                    plaidService.updateUserPurchases(itemId);
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
                 }

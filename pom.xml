@@ -83,6 +83,19 @@
 			<artifactId>google-api-client</artifactId>
 			<version>1.33.0</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt -->
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+			<version>10.5</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/tools.jackson.core/jackson-databind -->
+		<dependency>
+			<groupId>tools.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>3.0.1</version>
+		</dependency>
+		
 		<!-- https://mvnrepository.com/artifact/com.inngest/inngest -->
 		<dependency>
 			<groupId>com.inngest</groupId>
