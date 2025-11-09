@@ -75,6 +75,7 @@ public class PlaidService extends JointService {
                 "country_codes", List.of("US"),
                 "user", Map.of("client_user_id", user.getAuthtoken()),
                 "products", List.of("transactions"),
+                "account_filters", Map.of("credit", Map.of("account_subtypes", List.of("credit card"))),
                 "webhook", plaidWebhookUrl));
 
         CloseableHttpClient httpClient = HttpClients.createDefault();

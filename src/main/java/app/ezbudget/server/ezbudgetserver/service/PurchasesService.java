@@ -123,15 +123,6 @@ public class PurchasesService extends JointService {
                 }
             }
 
-            // Temp code until I get inngest up and running
-            for (String itemId : itemIdsToSync) {
-                try {
-                    plaidService.updateUserPurchases(itemId);
-                } catch (Exception e) {
-                    System.out.println(e.getMessage());
-                }
-            }
-
             // if the variable expenses' max values have changed then update them in the
             // items
             for (VariableExpense expense : user.getVariablePresets()) {
@@ -153,8 +144,17 @@ public class PurchasesService extends JointService {
                 }
             }
 
-            if (modified)
+            if (modified) {
                 this.factory.getPurchaseDAO().save(user.getAuthtoken(), items);
+                // Temp code until I get inngest up and running
+                for (String itemId : itemIdsToSync) {
+                    try {
+                        plaidService.updateUserPurchases(itemId);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                }
+            }
 
         } catch (NullPointerException e) {
             items = new HashMap<>();
