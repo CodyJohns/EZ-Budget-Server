@@ -236,8 +236,8 @@ public class PlaidService extends JointService {
                 .map(item -> item.transaction_id)
                 .collect(Collectors.toSet());
         expense.setPurchases(expense.getPurchases().stream()
-                .filter(exp -> removedIds.contains(exp.transaction_id)
-                        || removedIds.contains(exp.pending_transaction_id))
+                .filter(exp -> !removedIds.contains(exp.transaction_id)
+                        || !removedIds.contains(exp.pending_transaction_id))
                 .collect(Collectors.toList()));
 
         List<Purchase> new_purchases = new ArrayList<>();
