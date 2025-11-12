@@ -5,6 +5,7 @@ public class VariableExpense extends Expense {
     public float max;
     public boolean is_account = false;
     public String plaid_item_id;
+    public boolean setup_needed;
 
     public VariableExpense(int id, String name, float amount, float max) {
         super(id, name, amount);
