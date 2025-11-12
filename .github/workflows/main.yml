@@ -6,9 +6,9 @@ on:
   pull_request:
 
 env:
-  BUILD_NAME: ${{ vars.BUILD_NAME }}
-  REGISTRY: ${{ vars.REGISTRY }}
-  IMAGE: ${{ vars.REGISTRY }}/${{ vars.BUILD_NAME }}
+  BUILD_NAME: ezbudget_server
+  REGISTRY: docker.western-solutions.dev
+  IMAGE: docker.western-solutions.dev/ezbudget_server
 
 jobs:
   build-and-push:
