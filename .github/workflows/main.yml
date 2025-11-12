@@ -5,6 +5,11 @@ on:
     branches: [ main ]
   pull_request:
 
+env:
+  BUILD_NAME: ${{ vars.BUILD_NAME }}
+  REGISTRY: ${{ vars.REGISTRY }}
+  IMAGE: ${{ vars.REGISTRY }}/${{ vars.BUILD_NAME }}
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
