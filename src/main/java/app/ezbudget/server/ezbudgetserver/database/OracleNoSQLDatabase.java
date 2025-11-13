@@ -1,5 +1,7 @@
 package app.ezbudget.server.ezbudgetserver.database;
 
+import java.io.IOException;
+
 import oracle.nosql.driver.*;
 import oracle.nosql.driver.iam.SignatureProvider;
 
@@ -10,7 +12,8 @@ public class OracleNoSQLDatabase implements Database<NoSQLHandle> {
     private NoSQLHandle handle;
     private final String COMPARTMENT = "EZ_Budget";
 
-    public OracleNoSQLDatabase() {
+    public OracleNoSQLDatabase() throws IOException {
+        // ap = new SignatureProvider("DEFAULT");
         ap = SignatureProvider.createWithResourcePrincipal();
 
         config = new NoSQLHandleConfig(Region.US_PHOENIX_1, ap)

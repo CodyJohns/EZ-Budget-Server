@@ -24,10 +24,17 @@ public class OracleDAOFactory implements DAOFactory {
     private Verifier<GoogleIdToken> tokenVerifier;
 
     public Database getDatabase() {
+        System.out.println("Getting db connection");
         if (database == null) {
-            database = new OracleNoSQLDatabase();
+            try {
+                database = new OracleNoSQLDatabase();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             database.connect();
         }
+
+        System.out.println(database.toString());
 
         return database;
     }
