@@ -46,7 +46,7 @@ jobs:
               --container-instance-id "${{ secrets.OCI_CONTAINER_INSTANCE_ID }}" \
               --query 'data."lifecycle-state"' --raw-output)
             echo "State: $STATE"
-            if [ "$STATE" = "RUNNING" ]; then exit 0; fi
+            if [ "$STATE" = "ACTIVE" ]; then exit 0; fi
             sleep 10
           done
           echo "Timed out waiting for RUNNING"; exit 1
