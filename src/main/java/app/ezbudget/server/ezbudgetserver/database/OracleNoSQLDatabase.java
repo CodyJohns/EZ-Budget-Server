@@ -10,14 +10,17 @@ public class OracleNoSQLDatabase implements Database<NoSQLHandle> {
     private AuthorizationProvider ap;
     private NoSQLHandleConfig config;
     private NoSQLHandle handle;
-    private final String COMPARTMENT = "ocid1.compartment.oc1..aaaaaaaaalla5xa4a5j22ndlrcwl5cyjjdsb6baxobyds4fwoyzncmrgat6a";
 
     public OracleNoSQLDatabase() throws IOException {
-        ap = SignatureProvider.createWithResourcePrincipal();
+        if (System.getenv("DEV").equals("true")) {
+            ap = new SignatureProvider();
+        } else {
+            ap = SignatureProvider.createWithResourcePrincipal();
+        }
 
         config = new NoSQLHandleConfig(Region.US_PHOENIX_1, ap)
                 .setAuthorizationProvider(ap)
-                .setDefaultCompartment(COMPARTMENT);
+                .setDefaultCompartment(System.getenv("COMPARTMENT_OCID"));
     }
 
     public NoSQLHandle getHandle() {
