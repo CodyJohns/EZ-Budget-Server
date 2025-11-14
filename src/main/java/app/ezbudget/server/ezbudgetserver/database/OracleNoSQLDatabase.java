@@ -12,7 +12,7 @@ public class OracleNoSQLDatabase implements Database<NoSQLHandle> {
     private NoSQLHandle handle;
 
     public OracleNoSQLDatabase() throws IOException {
-        if (System.getenv("DEV").equals("true")) {
+        if (System.getenv("DEV") != null && System.getenv("DEV").equals("true")) {
             ap = new SignatureProvider();
         } else {
             ap = SignatureProvider.createWithResourcePrincipal();
