@@ -10,10 +10,9 @@ public class OracleNoSQLDatabase implements Database<NoSQLHandle> {
     private AuthorizationProvider ap;
     private NoSQLHandleConfig config;
     private NoSQLHandle handle;
-    private final String COMPARTMENT = "EZ_Budget";
+    private final String COMPARTMENT = "ocid1.compartment.oc1..aaaaaaaaalla5xa4a5j22ndlrcwl5cyjjdsb6baxobyds4fwoyzncmrgat6a";
 
     public OracleNoSQLDatabase() throws IOException {
-        // ap = new SignatureProvider("DEFAULT");
         ap = SignatureProvider.createWithResourcePrincipal();
 
         config = new NoSQLHandleConfig(Region.US_PHOENIX_1, ap)
