@@ -50,6 +50,7 @@ public class PlaidService extends JointService {
     private String secret;
     private String plaidWebhookUrl;
     private String plaidUrl;
+    private String baseAppUrl;
 
     public PlaidService(DAOFactory factory) {
         super(factory);
@@ -58,6 +59,7 @@ public class PlaidService extends JointService {
         secret = System.getenv("PLAID_SECRET");
         plaidWebhookUrl = System.getenv("PLAID_WEBHOOK_URL");
         plaidUrl = System.getenv("PLAID_URL");
+        baseAppUrl = System.getenv("BASE_APP_URL");
     }
 
     public HTTPResponse<PlaidLinkCreateResponse> getLinkToken(String authtoken) {
@@ -76,6 +78,7 @@ public class PlaidService extends JointService {
                 "user", Map.of("client_user_id", user.getAuthtoken()),
                 "products", List.of("transactions"),
                 "account_filters", Map.of("credit", Map.of("account_subtypes", List.of("credit card"))),
+                "redirect_uri", baseAppUrl + "/api/v2/plaid/oauth",
                 "webhook", plaidWebhookUrl));
 
         CloseableHttpClient httpClient = HttpClients.createDefault();

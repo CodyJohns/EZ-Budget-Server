@@ -78,4 +78,9 @@ public class PlaidController {
         }
     }
 
+    @GetMapping("/oauth")
+    public ResponseEntity getMethodName(@RequestParam String param) {
+        return ResponseEntity.ok().build();
+    }
+
 }
