@@ -58,7 +58,6 @@ public class UserController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
-    
 
     @GetMapping("/verify/{code}")
     public ResponseEntity<String> verifyUser(@PathVariable("code") String code) {
@@ -73,7 +72,8 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@RequestParam("username") String username, @RequestParam("password") String password) {
+    public ResponseEntity<String> loginUser(@RequestParam("username") String username,
+            @RequestParam("password") String password) {
 
         UserService service = new UserService(factory);
 
@@ -98,7 +98,8 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestParam("email") String email, @RequestParam("username") String username, @RequestParam("password") String password) {
+    public ResponseEntity<String> registerUser(@RequestParam("email") String email,
+            @RequestParam("username") String username, @RequestParam("password") String password) {
 
         UserService service = new UserService(factory);
 
@@ -112,12 +113,14 @@ public class UserController {
     }
 
     @PostMapping("/password/update")
-    public ResponseEntity<String> changePassword(@RequestHeader("Authorization") String authtoken, @RequestParam("oldpassword") String oldpassword, @RequestParam("newpassword") String newpassword) {
+    public ResponseEntity<String> changePassword(@RequestHeader("Authorization") String authtoken,
+            @RequestParam("oldpassword") String oldpassword, @RequestParam("newpassword") String newpassword) {
 
         AccountService service = new AccountService(factory);
 
         try {
-            return ResponseEntity.ok(gson.toJson(service.updatePassword(authtoken, oldpassword, newpassword).getMessage()));
+            return ResponseEntity
+                    .ok(gson.toJson(service.updatePassword(authtoken, oldpassword, newpassword).getMessage()));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(403).body(e.getMessage());
         } catch (Exception e) {
@@ -144,23 +147,24 @@ public class UserController {
 
         try {
             return ResponseEntity.ok(gson.toJson(service.authPasswordChange(code).getMessage()));
-        } catch(NullPointerException e) {
+        } catch (NullPointerException e) {
             return ResponseEntity.status(403).body(e.getMessage());
-        } catch(Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
     @PostMapping("/password/comp")
-    public ResponseEntity<String> compPasswordChange(@RequestParam("code") String code, @RequestParam("password") String password) {
+    public ResponseEntity<String> compPasswordChange(@RequestParam("code") String code,
+            @RequestParam("password") String password) {
 
         AccountService service = new AccountService(factory);
 
         try {
             return ResponseEntity.ok(gson.toJson(service.completePasswordChange(code, password).getMessage()));
-        } catch(NullPointerException e) {
+        } catch (NullPointerException e) {
             return ResponseEntity.status(403).body(e.getMessage());
-        } catch(Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
@@ -172,25 +176,27 @@ public class UserController {
 
         try {
             return ResponseEntity.ok(gson.toJson(service.getPurchases(authtoken).getData()));
-        } catch(NullPointerException e) {
+        } catch (NullPointerException e) {
             return ResponseEntity.status(404).body(e.getMessage());
-        } catch(Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
     @PostMapping("/purchases/save")
-    public ResponseEntity<String> savePurchasedItems(@RequestHeader("Authorization") String authtoken, @RequestParam("key") String key, @RequestParam("json") String json) {
+    public ResponseEntity<String> savePurchasedItems(@RequestHeader("Authorization") String authtoken,
+            @RequestParam("key") String key, @RequestParam("json") String json) {
 
         PurchasesService service = new PurchasesService(factory);
 
-        List<Purchase> itemsList = gson.fromJson(json, new TypeToken<List<Purchase>>() {}.getType());
+        List<Purchase> itemsList = gson.fromJson(json, new TypeToken<List<Purchase>>() {
+        }.getType());
 
         try {
             return ResponseEntity.ok(gson.toJson(service.savePurchases(authtoken, key, itemsList).getMessage()));
-        } catch(NullPointerException | DailyItemNotFoundException e) {
+        } catch (NullPointerException | DailyItemNotFoundException e) {
             return ResponseEntity.status(404).body(e.getMessage());
-        } catch(Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }

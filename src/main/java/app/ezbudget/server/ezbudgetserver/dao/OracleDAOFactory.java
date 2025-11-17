@@ -25,21 +25,24 @@ public class OracleDAOFactory implements DAOFactory {
     private Verifier<GoogleIdToken> tokenVerifier;
 
     public Database getDatabase() {
-        if(database == null) {
+        System.out.println("Getting db connection");
+        if (database == null) {
             try {
                 database = new OracleNoSQLDatabase();
-                database.connect();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
+            database.connect();
         }
+
+        System.out.println(database.toString());
 
         return database;
     }
 
     @Override
     public UserDAO getUserDAO() {
-        if(userDAO == null)
+        if (userDAO == null)
             userDAO = new OracleUserDAO(getDatabase());
 
         return userDAO;
@@ -47,7 +50,7 @@ public class OracleDAOFactory implements DAOFactory {
 
     @Override
     public EntryDAO getEntryDAO() {
-        if(entryDAO == null)
+        if (entryDAO == null)
             entryDAO = new OracleEntryDAO(getDatabase());
 
         return entryDAO;
@@ -55,7 +58,7 @@ public class OracleDAOFactory implements DAOFactory {
 
     @Override
     public PurchaseDAO getPurchaseDAO() {
-        if(purchaseDAO == null)
+        if (purchaseDAO == null)
             purchaseDAO = new OraclePurchaseDAO(getDatabase());
 
         return purchaseDAO;
@@ -63,7 +66,7 @@ public class OracleDAOFactory implements DAOFactory {
 
     @Override
     public Mailer getMailer() {
-        if(mailer == null)
+        if (mailer == null)
             mailer = new JavaMailer();
 
         return mailer;
@@ -71,7 +74,7 @@ public class OracleDAOFactory implements DAOFactory {
 
     @Override
     public Verifier<GoogleIdToken> getThirdPartyLoginVerifier() {
-        if(tokenVerifier == null)
+        if (tokenVerifier == null)
             tokenVerifier = new GoogleVerifier();
 
         return tokenVerifier;
