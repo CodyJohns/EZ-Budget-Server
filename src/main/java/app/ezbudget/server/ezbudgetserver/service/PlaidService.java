@@ -72,7 +72,7 @@ public class PlaidService extends JointService {
         String json = gson.toJson(Map.of(
                 "client_id", clientId,
                 "secret", secret,
-                "client_name", "EZ-Budget",
+                "client_name", "EZ Budget",
                 "language", "en",
                 "country_codes", List.of("US"),
                 "user", Map.of("client_user_id", user.getAuthtoken()),
