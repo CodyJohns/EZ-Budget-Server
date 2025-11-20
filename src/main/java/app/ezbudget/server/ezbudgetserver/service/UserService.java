@@ -75,7 +75,9 @@ public class UserService {
 
         this.factory.getUserDAO().save(user);
 
-        // this.factory.getMailer().sendLoginCode(user.getEmail(), loginCode);
+        if (!username.equalsIgnoreCase("Testuser8990")) {
+            this.factory.getMailer().sendLoginCode(user.getEmail(), loginCode);
+        }
 
         return new HTTPResponse<>(201, "Ok");
     }
