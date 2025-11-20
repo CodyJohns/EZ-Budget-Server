@@ -36,7 +36,7 @@ public class JavaMailer implements Mailer {
     @Override
     public boolean sendLoginCode(String recip, String code) {
 
-        String htmlbody = "<div style=\"padding: 50px\"><div style=\"max-width: 700px; font-family: Arial, sans-serif\"><div style=\"min-height: 74px;border: 1px solid #111111;padding: 3px;display: flex;align-items: center;justify-content: center;\"><img src=\"https://ezbudget.app/public_assets/ez.png\" height=\"74px\" /></div><div style=\"padding: 40px;border-left: 1px solid #111111;border-right: 1px solid #111111;\"><h2 style=\"text-align: center\">Your login verification code.</h2><div style=\"font-size: 20px; text-align: center;\">One-time code:<strong>"
+        String htmlbody = "<div style=\"padding: 8px\"><div style=\"max-width: 700px; font-family: Arial, sans-serif\"><div style=\"min-height: 74px;border: 1px solid #111111;padding: 3px;display: flex;align-items: center;justify-content: center;\"><img src=\"https://ezbudget.app/public_assets/ez.png\" height=\"74px\" /></div><div style=\"padding: 40px;border-left: 1px solid #111111;border-right: 1px solid #111111;\"><h2 style=\"text-align: center\">Your login verification code.</h2><div style=\"font-size: 20px; text-align: center;\">One-time code:<strong>"
                 + code
                 + "</strong></div><p>This code will expire in 10 minutes. If you didn’t request this, you can safely ignore this email.</p></div><div style=\"padding: 40px;border: 1px solid #111111;background-color: #eaeaea;\"><p>This email was sent due to account action on your part. We will not send you these types of emails unless you have requested it byinteracting with our website.</p><p>&copy; 2025 EZ Budget by <a href=\"https://western-solutions.dev\">Western Software Solutions</a></p></div></div></div>";
 
@@ -70,7 +70,7 @@ public class JavaMailer implements Mailer {
     @Override
     public boolean sendMail(String subject, String body, String altbody, String recip) {
 
-        String htmlbody = "<div style=\"padding: 50px\"><div style=\"max-width: 700px; font-family: Arial, sans-serif\"><div style=\"min-height: 74px;border: 1px solid #111111;padding: 3px;display: flex;align-items: center;justify-content: center;\"><img src=\"https://ezbudget.app/public_assets/ez.png\" height=\"74px\" /></div><div style=\"padding: 40px;border-left: 1px solid #111111;border-right: 1px solid #111111;\"><h3 style=\"text-align: center\">"
+        String htmlbody = "<div style=\"padding: 8px\"><div style=\"max-width: 700px; font-family: Arial, sans-serif\"><div style=\"min-height: 74px;border: 1px solid #111111;padding: 3px;display: flex;align-items: center;justify-content: center;\"><img src=\"https://ezbudget.app/public_assets/ez.png\" height=\"74px\" /></div><div style=\"padding: 40px;border-left: 1px solid #111111;border-right: 1px solid #111111;\"><h3 style=\"text-align: center\">"
                 + subject + "</h3><p>" + body
                 + "</p></div><div style=\"padding: 40px;border: 1px solid #111111;background-color: #eaeaea;\"><p>This email was sent due to account action on your part. We will not send you these types of emails unless you have requested it by interacting with our website.</p><p>&copy; 2025 EZ Budget by <a href=\"https://western-solutions.dev\">Western Software Solutions</a></p></div></div></div>";
 
