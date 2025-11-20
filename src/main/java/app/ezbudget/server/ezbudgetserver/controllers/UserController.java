@@ -23,6 +23,7 @@ import app.ezbudget.server.ezbudgetserver.service.AccountService;
 import app.ezbudget.server.ezbudgetserver.service.ChartDataService;
 import app.ezbudget.server.ezbudgetserver.service.PurchasesService;
 import app.ezbudget.server.ezbudgetserver.service.UserService;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/v2/user")
@@ -79,6 +80,20 @@ public class UserController {
 
         try {
             return ResponseEntity.ok(gson.toJson(service.loginUser(username, password)));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/login/verify")
+    public ResponseEntity<String> verifyLoginCode(@RequestParam("username") String username,
+            @RequestParam("code") String code) {
+        UserService service = new UserService(factory);
+
+        try {
+            return ResponseEntity.ok(gson.toJson(service.verifyLoginCode(username, code)));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(403).body(e.getMessage());
         } catch (Exception e) {
