@@ -24,7 +24,6 @@ public class OracleDAOFactory implements DAOFactory {
     private Verifier<GoogleIdToken> tokenVerifier;
 
     public Database getDatabase() {
-        System.out.println("Getting db connection");
         if (database == null) {
             try {
                 database = new OracleNoSQLDatabase();
@@ -33,8 +32,6 @@ public class OracleDAOFactory implements DAOFactory {
             }
             database.connect();
         }
-
-        System.out.println(database.toString());
 
         return database;
     }
