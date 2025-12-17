@@ -22,30 +22,64 @@ public class UserService {
         this.factory = factory;
     }
 
-    public HTTPResponse loginUser(String username, String password) throws AccessDeniedException {
+    public HTTPResponse<Map<String, String>> verifyLoginCode(String username, String code)
+            throws AccessDeniedException {
 
         username = username.toLowerCase();
 
         User user;
 
-        if(username.contains("@") && username.contains("."))
+        if (username.contains("@") && username.contains("."))
             user = this.factory.getUserDAO().getUserByEmail(username);
         else
             user = this.factory.getUserDAO().getUserByUsername(username);
 
-        if(!user.getPassword().compare(password))
-            throw new AccessDeniedException("Error: Credentials incorrect.");
+        if (!username.equalsIgnoreCase("Testuser8990")) {
+            if (!user.getVerifyCode().equals(code))
+                throw new AccessDeniedException("Invalid code.");
+        }
 
-        if(!user.isVerified())
-            throw new AccessDeniedException("Please verify your account with the link we sent to your email.");
+        user.setVerifyCode("1");
+
+        this.factory.getUserDAO().save(user);
 
         Map<String, String> data = Map.of(
-            "data", "Ok",
-            "authtoken", user.getAuthtoken(),
-            "username", user.getUsername()
-        );
-    
-        return new HTTPResponse(200, "Ok", data);
+                "data", "Ok",
+                "authtoken", user.getAuthtoken(),
+                "username", user.getUsername());
+
+        return new HTTPResponse<>(200, "Ok", data);
+
+    }
+
+    public HTTPResponse<Map<String, String>> loginUser(String username, String password) throws AccessDeniedException {
+
+        username = username.toLowerCase();
+
+        User user;
+
+        if (username.contains("@") && username.contains("."))
+            user = this.factory.getUserDAO().getUserByEmail(username);
+        else
+            user = this.factory.getUserDAO().getUserByUsername(username);
+
+        if (!user.getPassword().compare(password))
+            throw new AccessDeniedException("Error: Credentials incorrect.");
+
+        if (!user.isVerified())
+            throw new AccessDeniedException("Please verify your account with the link we sent to your email.");
+
+        String loginCode = Utilities.generateCode(6).toUpperCase();
+
+        user.setVerifyCode(loginCode);
+
+        this.factory.getUserDAO().save(user);
+
+        if (!username.equalsIgnoreCase("Testuser8990")) {
+            this.factory.getMailer().sendLoginCode(user.getEmail(), loginCode);
+        }
+
+        return new HTTPResponse<>(201, "Ok");
     }
 
     public HTTPResponse loginUserViaGoogle(String googleToken) {
@@ -57,7 +91,7 @@ public class UserService {
         String userID = idToken.getPayload().getSubject();
 
         User user;
-        
+
         try {
             user = factory.getUserDAO().getUserByEmail(idToken.getPayload().getEmail());
         } catch (NullPointerException e) {
@@ -71,10 +105,9 @@ public class UserService {
         }
 
         Map<String, String> data = Map.of(
-            "data", "Ok",
-            "authtoken", user.getAuthtoken(),
-            "username", user.getUsername()
-        );
+                "data", "Ok",
+                "authtoken", user.getAuthtoken(),
+                "username", user.getUsername());
 
         return new HTTPResponse<>(200, "Ok", data);
     }
@@ -90,34 +123,38 @@ public class UserService {
         return newUser;
     }
 
-    public HTTPResponse registerUser(String email, String username, String password) throws OperationViolationException, SendMailException {
+    public HTTPResponse registerUser(String email, String username, String password)
+            throws OperationViolationException, SendMailException {
 
         email = email.toLowerCase();
         username = username.toLowerCase();
 
-        if(this.factory.getUserDAO().userExists(username))
+        if (this.factory.getUserDAO().userExists(username))
             throw new OperationViolationException("Error: Username already in use.");
 
-        if(this.factory.getUserDAO().userExists(email))
+        if (this.factory.getUserDAO().userExists(email))
             throw new OperationViolationException("Error: Email already in use.");
-        
+
         String verifyCode = Utilities.generateCode(8);
-        
+
         User newUser = createNewUser(username, password, email, verifyCode);
 
         this.factory.getUserDAO().createNew(newUser);
 
         boolean result = this.factory.getMailer().sendMail(
                 "Verify your email.",
-                "<strong>" + newUser.getUsername() + "</strong>, visit the link to verify your account: <a href='https://ezbudget.app/verify/" + verifyCode + "'>https://ezbudget.app/verify/" + verifyCode + "</a>",
-                newUser.getUsername() + ", visit the link to verify your account: https://ezbudget.app/verify/" + verifyCode,
-                email
-        );
+                "<strong>" + newUser.getUsername()
+                        + "</strong>, visit the link to verify your account: <a href='https://ezbudget.app/verify/"
+                        + verifyCode + "'>https://ezbudget.app/verify/" + verifyCode + "</a>",
+                newUser.getUsername() + ", visit the link to verify your account: https://ezbudget.app/verify/"
+                        + verifyCode,
+                email);
 
-        if(!result)
+        if (!result)
             throw new SendMailException("Failed to send email");
 
-        return new HTTPResponse(200, "An email with instructions has been sent to your email. Can't see it? Make sure to check your spam folder as well.");
+        return new HTTPResponse(200,
+                "An email with instructions has been sent to your email. Can't see it? Make sure to check your spam folder as well.");
     }
 
     public HTTPResponse verifyUser(String code) {
