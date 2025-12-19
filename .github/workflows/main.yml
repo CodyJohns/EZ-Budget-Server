@@ -2,13 +2,14 @@ name: CI - Build & Push ezbudget_server
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
   pull_request:
 
 env:
   BUILD_NAME: ezbudget_server
   REGISTRY: docker.western-solutions.dev
   IMAGE: docker.western-solutions.dev/ezbudget_server
+  IMAGE_TAG: ${{ github.ref_name == 'main' && 'latest' || 'staging' }}
 
 jobs:
   build-and-push:
@@ -40,12 +41,12 @@ jobs:
           username: ${{ secrets.DOCKER_REGISTRY_USER }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
 
-      - name: Build and push (latest + sha)
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' }}
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
             ${{ env.IMAGE }}:${{ github.sha }}

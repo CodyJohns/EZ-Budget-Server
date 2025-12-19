@@ -1,14 +1,15 @@
 name: Deploy - Restart OCI Container Instance
 
 on:
-  workflow_dispatch: {} 
+  workflow_dispatch: {}
   workflow_run:
     workflows: ["CI - Build & Push ezbudget_server"]
     types: [completed]
+    branches: [main, dev] # only deploy when CI ran on these branches
 
 jobs:
   restart-oci-container-instance:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -20,8 +21,9 @@ jobs:
       - name: Configure OCI CLI
         run: |
           mkdir -p ~/.oci
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oci_api_key.pem
+          printf '%s\n' "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oci_api_key.pem
           chmod 600 ~/.oci/oci_api_key.pem
+
           cat > ~/.oci/config <<'EOF'
           [DEFAULT]
           user=${{ secrets.OCI_USER_OCID }}
@@ -30,23 +32,32 @@ jobs:
           region=${{ secrets.OCI_REGION }}
           key_file=~/.oci/oci_api_key.pem
           EOF
-          # If your key is passphrase-protected, also add:
-          # echo "pass_phrase=${{ secrets.OCI_PRIVATE_KEY_PASS }}" >> ~/.oci/config
+
+      - name: Choose container instance id
+        id: pick
+        run: |
+          BRANCH="${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          if [[ "$BRANCH" == "main" ]]; then
+            echo "container_id=${{ secrets.PROD_CONTAINER_INSTANCE_ID }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "container_id=${{ secrets.STAGING_CONTAINER_INSTANCE_ID }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Restart Container Instance
         run: |
           oci --auth api_key container-instances container-instance restart \
-            --container-instance-id "${{ secrets.OCI_CONTAINER_INSTANCE_ID }}"
+            --container-instance-id "${{ steps.pick.outputs.container_id }}"
 
-      - name: Wait for RUNNING
+      - name: Wait for ACTIVE
         run: |
-          echo "Waiting for container instance to be RUNNING..."
+          echo "Waiting for container instance to be ACTIVE..."
           for i in {1..60}; do
             STATE=$(oci container-instances container-instance get \
-              --container-instance-id "${{ secrets.OCI_CONTAINER_INSTANCE_ID }}" \
+              --container-instance-id "${{ steps.pick.outputs.container_id }}" \
               --query 'data."lifecycle-state"' --raw-output)
             echo "State: $STATE"
             if [ "$STATE" = "ACTIVE" ]; then exit 0; fi
             sleep 10
           done
-          echo "Timed out waiting for RUNNING"; exit 1
+          echo "Timed out waiting for ACTIVE"; exit 1
