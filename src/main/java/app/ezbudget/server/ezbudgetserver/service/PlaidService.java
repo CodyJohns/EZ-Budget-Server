@@ -91,6 +91,7 @@ public class PlaidService extends JointService {
             HttpEntity responseEntity = response.getEntity();
             if (responseEntity != null) {
                 String responseBody = EntityUtils.toString(responseEntity);
+                System.out.println(responseBody);
                 return new HTTPResponse<PlaidLinkCreateResponse>(200, "Success",
                         gson.fromJson(responseBody, PlaidLinkCreateResponse.class));
             }
