@@ -4,6 +4,8 @@ public class VariableExpense extends Expense {
 
     public float max;
     public boolean is_account = false;
+    public String plaid_item_id;
+    public boolean setup_needed;
 
     public VariableExpense(int id, String name, float amount, float max) {
         super(id, name, amount);
@@ -14,6 +16,13 @@ public class VariableExpense extends Expense {
         super(id, name, amount);
         this.max = max;
         this.is_account = isAccount;
+    }
+
+    public VariableExpense(int id, String name, float amount, float max, boolean isAccount, String plaidItemId) {
+        super(id, name, amount);
+        this.max = max;
+        this.is_account = isAccount;
+        this.plaid_item_id = plaidItemId;
     }
 
     public float getMax() {
@@ -27,6 +36,14 @@ public class VariableExpense extends Expense {
      */
     public boolean isAccount() {
         return is_account;
+    }
+
+    public String getPlaidItemId() {
+        return plaid_item_id;
+    }
+
+    public void setPlaidItemId(String item_id) {
+        plaid_item_id = item_id;
     }
 
     @Override

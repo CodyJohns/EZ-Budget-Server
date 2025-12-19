@@ -46,4 +46,11 @@ public interface DAOFactory {
      * @return Verifer
      */
     Verifier getThirdPartyLoginVerifier();
+
+    /**
+     * Get the transactionDAO object.
+     * 
+     * @return TransactionDAO
+     */
+    TransactionDAO getTransactionDAO();
 }

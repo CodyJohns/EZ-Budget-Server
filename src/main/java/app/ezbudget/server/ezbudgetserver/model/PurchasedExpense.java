@@ -18,7 +18,8 @@ public class PurchasedExpense extends VariableExpense {
     }
 
     public PurchasedExpense(VariableExpense expense) {
-        super(expense.getId(), expense.getName(), expense.getAmount(), expense.getMax(), expense.isAccount());
+        super(expense.getId(), expense.getName(), expense.getAmount(), expense.getMax(), expense.isAccount(),
+                expense.getPlaidItemId());
         items = new ArrayList<>();
     }
 
