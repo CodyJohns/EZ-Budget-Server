@@ -33,31 +33,50 @@ jobs:
           key_file=~/.oci/oci_api_key.pem
           EOF
 
-      - name: Choose container instance id
-        id: pick
+      - name: Restart Container Instance
+        shell: bash
         run: |
+          set -euo pipefail
+
           BRANCH="${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}"
-          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           if [[ "$BRANCH" == "main" ]]; then
-            echo "container_id=${{ secrets.PROD_CONTAINER_INSTANCE_ID }}" >> "$GITHUB_OUTPUT"
+            CONTAINER_ID="${{ secrets.PROD_CONTAINER_INSTANCE_ID }}"
           else
-            echo "container_id=${{ secrets.STAGING_CONTAINER_INSTANCE_ID }}" >> "$GITHUB_OUTPUT"
+            CONTAINER_ID="${{ secrets.STAGING_CONTAINER_INSTANCE_ID }}"
           fi
 
-      - name: Restart Container Instance
-        run: |
+          if [[ -z "$CONTAINER_ID" ]]; then
+            echo "ERROR: CONTAINER_ID is empty." >&2
+            exit 1
+          fi
+
           oci --auth api_key container-instances container-instance restart \
-            --container-instance-id "${{ steps.pick.outputs.container_id }}"
+            --container-instance-id "$CONTAINER_ID"
 
       - name: Wait for ACTIVE
+        shell: bash
         run: |
+          set -euo pipefail
+
+          BRANCH="${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}"
+          if [[ "$BRANCH" == "main" ]]; then
+            CONTAINER_ID="${{ secrets.PROD_CONTAINER_INSTANCE_ID }}"
+          else
+            CONTAINER_ID="${{ secrets.STAGING_CONTAINER_INSTANCE_ID }}"
+          fi
+
+          if [[ -z "$CONTAINER_ID" ]]; then
+            echo "ERROR: CONTAINER_ID is empty." >&2
+            exit 1
+          fi
+
           echo "Waiting for container instance to be ACTIVE..."
           for i in {1..60}; do
             STATE=$(oci container-instances container-instance get \
-              --container-instance-id "${{ steps.pick.outputs.container_id }}" \
+              --container-instance-id "$CONTAINER_ID" \
               --query 'data."lifecycle-state"' --raw-output)
             echo "State: $STATE"
-            if [ "$STATE" = "ACTIVE" ]; then exit 0; fi
+            if [[ "$STATE" == "ACTIVE" ]]; then exit 0; fi
             sleep 10
           done
           echo "Timed out waiting for ACTIVE"; exit 1
