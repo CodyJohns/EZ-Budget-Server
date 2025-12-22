@@ -1,6 +1,8 @@
 package app.ezbudget.server.ezbudgetserver.service;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -265,9 +267,12 @@ public class PlaidService extends JointService {
                             transaction.transaction_id));
         }
         expense.getPurchases().addAll(new_purchases);
-        expense.amount = expense.getPurchases().stream()
-                .mapToInt(p -> (int) Math.round(p.amount * 100))
-                .sum() / 100;
+
+        BigDecimal total = expense.getPurchases().stream()
+                .map(purchase -> BigDecimal.valueOf(purchase.amount))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        expense.amount = total.setScale(2, RoundingMode.HALF_UP).floatValue();
     }
 
     public void updateUserPurchases(String itemId) {
