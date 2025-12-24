@@ -11,6 +11,9 @@ jobs:
   restart-oci-container-instance:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      contents: read
 
     steps:
       - name: Install OCI CLI
