@@ -268,6 +268,8 @@ public class PlaidService extends JointService {
         }
         expense.getPurchases().addAll(new_purchases);
 
+        expense.getPurchases().sort((a, b) -> b.timestamp.compareTo(a.timestamp));
+
         BigDecimal total = expense.getPurchases().stream()
                 .map(purchase -> BigDecimal.valueOf(purchase.amount))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
