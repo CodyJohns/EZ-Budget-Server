@@ -83,7 +83,6 @@ public class EntriesController {
         try {
             return ResponseEntity.ok(gson.toJson(service.addEntry(authtoken, entry).getMessage()));
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
@@ -115,7 +114,6 @@ public class EntriesController {
         try {
             return ResponseEntity.ok(gson.toJson(service.deleteEntry(authtoken, id).getMessage()));
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
