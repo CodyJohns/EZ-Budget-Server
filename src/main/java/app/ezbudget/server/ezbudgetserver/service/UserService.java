@@ -46,7 +46,8 @@ public class UserService {
         Map<String, String> data = Map.of(
                 "data", "Ok",
                 "authtoken", user.getAuthtoken(),
-                "username", user.getUsername());
+                "username", user.getUsername(),
+                "subscription_type", user.subscription_type.toString());
 
         return new HTTPResponse<>(200, "Ok", data);
 
@@ -107,7 +108,8 @@ public class UserService {
         Map<String, String> data = Map.of(
                 "data", "Ok",
                 "authtoken", user.getAuthtoken(),
-                "username", user.getUsername());
+                "username", user.getUsername(),
+                "subscription_type", user.subscription_type.toString());
 
         return new HTTPResponse<>(200, "Ok", data);
     }

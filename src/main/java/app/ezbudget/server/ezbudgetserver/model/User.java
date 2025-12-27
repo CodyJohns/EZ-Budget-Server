@@ -7,6 +7,11 @@ import app.ezbudget.server.ezbudgetserver.model.plaid.PlaidItem;
 
 public class User {
 
+    public enum SubscriptionType {
+        FREE,
+        PREMIUM
+    }
+
     public String username;
     public Password password;
     public String authtoken;
@@ -18,6 +23,7 @@ public class User {
     public boolean email_reminder;
     public int entries;
     public JointAccountData jointData;
+    public SubscriptionType subscription_type = SubscriptionType.FREE;
     public List<VariableExpense> variable_presets;
     public List<CalculatedExpense> calculated_presets;
     public List<PlaidItem> items;
