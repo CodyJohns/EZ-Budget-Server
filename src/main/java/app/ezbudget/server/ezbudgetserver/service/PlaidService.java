@@ -30,6 +30,7 @@ import app.ezbudget.server.ezbudgetserver.dao.DAOFactory;
 import app.ezbudget.server.ezbudgetserver.model.Purchase;
 import app.ezbudget.server.ezbudgetserver.model.PurchasedExpense;
 import app.ezbudget.server.ezbudgetserver.model.User;
+import app.ezbudget.server.ezbudgetserver.model.VariableExpense;
 import app.ezbudget.server.ezbudgetserver.model.plaid.PlaidItem;
 import app.ezbudget.server.ezbudgetserver.model.plaid.PlaidTransactionUpdate;
 import app.ezbudget.server.ezbudgetserver.model.plaid.TransactionSyncResponse;
@@ -46,6 +47,16 @@ public class PlaidService extends JointService {
     class PlaidItemRemoveResponse {
         public boolean removed;
         public String request_id;
+    }
+
+    class VariableExpenseWithPlaidItem {
+        public VariableExpense expense;
+        public PlaidItem item;
+
+        public VariableExpenseWithPlaidItem(VariableExpense expense, PlaidItem item) {
+            this.expense = expense;
+            this.item = item;
+        }
     }
 
     private Gson gson;
@@ -353,11 +364,19 @@ public class PlaidService extends JointService {
         return new HTTPResponse<String>(200, "Ok");
     }
 
-    public HTTPResponse<List<PlaidItem>> getUserPlaidItems(String authtoken) {
+    public HTTPResponse<List<VariableExpenseWithPlaidItem>> getUserPlaidItems(String authtoken) {
         User user = getTargetUser(this.factory.getUserDAO().getUserByAuthtoken(authtoken));
 
         List<PlaidItem> items = this.factory.getTransactionDAO().getItemsByAuthtoken(user.getAuthtoken());
+        List<VariableExpenseWithPlaidItem> data = user.getVariablePresets().stream()
+                .filter((exp) -> {
+                    return exp.plaid_item_id != null
+                            && items.stream().anyMatch(item -> item.item_id.equals(exp.plaid_item_id));
+                })
+                .map(exp -> new VariableExpenseWithPlaidItem(exp,
+                        items.stream().filter(item -> item.item_id.equals(exp.plaid_item_id)).findFirst().orElse(null)))
+                .collect(Collectors.toList());
 
-        return new HTTPResponse<List<PlaidItem>>(200, "Success", items);
+        return new HTTPResponse<List<VariableExpenseWithPlaidItem>>(200, "Success", data);
     }
 }
