@@ -21,7 +21,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
 import com.google.gson.Gson;
@@ -59,6 +58,11 @@ public class PlaidService extends JointService {
         }
     }
 
+    public class PublicTokenRequest {
+        public String public_token;
+        public String updating_item_id;
+    }
+
     private Gson gson;
     private String clientId;
     private String secret;
@@ -76,24 +80,30 @@ public class PlaidService extends JointService {
         baseAppUrl = System.getenv("BASE_APP_URL");
     }
 
-    public HTTPResponse<PlaidLinkCreateResponse> getLinkToken(String authtoken) {
+    public HTTPResponse<PlaidLinkCreateResponse> getLinkToken(String authtoken, String access_token /* nullable */) {
         User user = getTargetUser(this.factory.getUserDAO().getUserByAuthtoken(authtoken));
 
         if (clientId == null || secret == null) {
             throw new RuntimeException("Missing PLAID_CLIENT_ID and/or PLAID_SECRET env variables.");
         }
 
-        String json = gson.toJson(Map.of(
-                "client_id", clientId,
-                "secret", secret,
-                "client_name", "EZ Budget",
-                "language", "en",
-                "country_codes", List.of("US"),
-                "user", Map.of("client_user_id", user.getAuthtoken()),
-                "products", List.of("transactions"),
-                "account_filters", Map.of("credit", Map.of("account_subtypes", List.of("credit card"))),
-                "redirect_uri", baseAppUrl + "/api/v2/plaid/oauth",
-                "webhook", plaidWebhookUrl));
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("client_id", clientId);
+        payload.put("secret", secret);
+        payload.put("client_name", "EZ Budget");
+        payload.put("language", "en");
+        payload.put("country_codes", List.of("US"));
+        payload.put("user", Map.of("client_user_id", user.getAuthtoken()));
+        payload.put("products", List.of("transactions"));
+        payload.put("account_filters", Map.of("credit", Map.of("account_subtypes", List.of("credit card"))));
+        payload.put("redirect_uri", baseAppUrl + "/api/v2/plaid/oauth");
+        payload.put("webhook", plaidWebhookUrl);
+
+        if (access_token != null) {
+            payload.put("access_token", access_token);
+        }
+
+        String json = gson.toJson(payload);
 
         CloseableHttpClient httpClient = HttpClients.createDefault();
 
@@ -122,39 +132,57 @@ public class PlaidService extends JointService {
         return null;
     }
 
-    public HTTPResponse<String> savePublicToken(String authtoken, String public_token) {
+    public HTTPResponse<String> savePublicToken(String authtoken, PublicTokenRequest request) {
         User user = getTargetUser(this.factory.getUserDAO().getUserByAuthtoken(authtoken));
 
         if (clientId == null || secret == null) {
             throw new RuntimeException("Missing PLAID_CLIENT_ID and/or PLAID_SECRET env variables.");
         }
 
-        String json = gson.toJson(Map.of(
-                "client_id", clientId,
-                "secret", secret,
-                "public_token", public_token));
+        Map<String, String> payload = new HashMap<>();
+        payload.put("client_id", clientId);
+        payload.put("secret", secret);
+        payload.put("public_token", request.public_token);
 
         CloseableHttpClient httpClient = HttpClients.createDefault();
 
         HttpPost httpPost = new HttpPost(plaidUrl + "/item/public_token/exchange");
         httpPost.setHeader("Content-Type", "application/json");
-        httpPost.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
+        httpPost.setEntity(new StringEntity(gson.toJson(payload), ContentType.APPLICATION_JSON));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
             HttpEntity responseEntity = response.getEntity();
             if (responseEntity != null) {
                 String responseBody = EntityUtils.toString(responseEntity);
                 PlaidItem item = gson.fromJson(responseBody, PlaidItem.class);
-                item.state = PlaidItem.ItemStatus.Active;
-                item.authtoken = authtoken;
 
-                if (user.items == null) {
-                    user.items = new ArrayList<>();
+                if (request.updating_item_id != null) {
+                    PlaidItem existingItem = this.factory.getTransactionDAO().getItem(request.updating_item_id);
+                    existingItem.access_token = item.access_token;
+                    existingItem.state = PlaidItem.ItemStatus.Active;
+                    existingItem.state_desc = null;
+
+                    this.factory.getTransactionDAO().saveItem(existingItem);
+                    // update item in user's list
+                    List<PlaidItem> userItems = user.getPlaidAccessTokens();
+                    for (int i = 0; i < userItems.size(); i++) {
+                        if (userItems.get(i).item_id.equals(existingItem.item_id)) {
+                            userItems.set(i, existingItem);
+                            break;
+                        }
+                    }
+                } else {
+                    item.state = PlaidItem.ItemStatus.Active;
+                    item.authtoken = authtoken;
+
+                    if (user.items == null) {
+                        user.items = new ArrayList<>();
+                    }
+
+                    user.getPlaidAccessTokens().add(item);
+                    this.factory.getTransactionDAO().saveItem(item);
                 }
 
-                user.getPlaidAccessTokens().add(item);
-
-                this.factory.getTransactionDAO().saveItem(item);
                 this.factory.getUserDAO().save(user);
 
                 return new HTTPResponse<String>(200, "Success", gson.toJson(Map.of("id", item.item_id), Map.class));

@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import app.ezbudget.server.ezbudgetserver.dao.DAOFactory;
 import app.ezbudget.server.ezbudgetserver.model.plaid.PlaidTransactionUpdate;
 import app.ezbudget.server.ezbudgetserver.service.PlaidService;
+import app.ezbudget.server.ezbudgetserver.service.PlaidService.PublicTokenRequest;
 import app.ezbudget.server.ezbudgetserver.util.PlaidJWTVerifier;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,12 +32,13 @@ public class PlaidController {
     }
 
     @GetMapping("/link-create")
-    public ResponseEntity<String> getUserIncomeHistory(@RequestHeader("Authorization") String authtoken) {
+    public ResponseEntity<String> linkToken(@RequestHeader("Authorization") String authtoken,
+            @RequestParam(required = false) String access_token) {
 
         PlaidService service = new PlaidService(factory);
 
         try {
-            return ResponseEntity.ok(gson.toJson(service.getLinkToken(authtoken).getData()));
+            return ResponseEntity.ok(gson.toJson(service.getLinkToken(authtoken, access_token).getData()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
@@ -44,15 +46,17 @@ public class PlaidController {
 
     @PostMapping("/save-public-token")
     public ResponseEntity<String> publicToken(@RequestHeader("Authorization") String authtoken,
-            @RequestParam("public_token") String public_token) {
+            @RequestBody String body) {
 
-        if (public_token == null)
+        PublicTokenRequest request = gson.fromJson(body, PublicTokenRequest.class);
+
+        if (request.public_token == null)
             return ResponseEntity.badRequest().build();
 
         PlaidService service = new PlaidService(factory);
 
         try {
-            return ResponseEntity.ok(gson.toJson(service.savePublicToken(authtoken, public_token).getData()));
+            return ResponseEntity.ok(gson.toJson(service.savePublicToken(authtoken, request).getData()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }

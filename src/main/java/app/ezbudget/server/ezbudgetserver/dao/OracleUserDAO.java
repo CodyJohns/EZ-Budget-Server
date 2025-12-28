@@ -24,6 +24,7 @@ public class OracleUserDAO implements UserDAO {
         this.database = database;
         this.gson = new Gson();
     }
+
     @Override
     public User getUserByAuthtoken(String authtoken) {
 
@@ -33,7 +34,7 @@ public class OracleUserDAO implements UserDAO {
 
         GetResult result = database.getHandle().get(request);
 
-        if(result.getValue() == null)
+        if (result.getValue() == null)
             throw new NullPointerException("User does not exist");
 
         MapValue row = result.getValue();
@@ -47,8 +48,8 @@ public class OracleUserDAO implements UserDAO {
     }
 
     @Override
-    public User getUserByVerifyCode(String code) { 
-        return getUserByColumn(VERIFIED, code); 
+    public User getUserByVerifyCode(String code) {
+        return getUserByColumn(VERIFIED, code);
     }
 
     @Override
@@ -57,24 +58,26 @@ public class OracleUserDAO implements UserDAO {
     }
 
     @Override
-    public User getUserByEmail(String email) { return getUserByColumn(EMAIL, email.toLowerCase()); }
+    public User getUserByEmail(String email) {
+        return getUserByColumn(EMAIL, email.toLowerCase());
+    }
 
     private User getUserByColumn(String field, String value) {
 
         String query = "DECLARE $iden_value STRING; " +
-                       "SELECT * FROM " + TABLE_NAME + " WHERE " + field + " = $iden_value";
+                "SELECT * FROM " + TABLE_NAME + " WHERE " + field + " = $iden_value";
 
         PrepareRequest prepReq = new PrepareRequest().setStatement(query);
 
         PrepareResult prepRes = database.getHandle().prepare(prepReq);
-        
+
         prepRes.getPreparedStatement().setVariable("$iden_value", new StringValue(value));
 
         QueryRequest request = new QueryRequest().setPreparedStatement(prepRes);
 
         QueryResult result = database.getHandle().query(request);
 
-        if(result.getResults().size() == 0)
+        if (result.getResults().size() == 0)
             throw new NullPointerException("User does not exist");
 
         MapValue row = result.getResults().get(0);
@@ -84,8 +87,9 @@ public class OracleUserDAO implements UserDAO {
 
     private User loadUser(MapValue row) {
         User user = gson.fromJson(row.getString(USER_DATA), User.class);
+        user.subscription_type = user.subscription_type == null ? User.SubscriptionType.FREE : user.subscription_type;
 
-        if(user.getJointData() == null)
+        if (user.getJointData() == null)
             user.jointData = new JointAccountData();
 
         return user;
@@ -111,7 +115,6 @@ public class OracleUserDAO implements UserDAO {
                 .put(PASSWORD_CHANGE, user.awaitingPasswordChange() ? user.getPasswordChangeCode() : "1")
                 .put(USER_DATA, gson.toJson(user));
 
-
         PutRequest putRequest = new PutRequest().setValue(value).setTableName(TABLE_NAME);
 
         database.getHandle().put(putRequest);
@@ -121,19 +124,20 @@ public class OracleUserDAO implements UserDAO {
     public boolean userExists(String id) {
 
         String query = "DECLARE $iden_value STRING; " +
-                       "SELECT username FROM " + TABLE_NAME + " WHERE " + USERNAME + " = $iden_value OR " + EMAIL + " = $iden_value";
+                "SELECT username FROM " + TABLE_NAME + " WHERE " + USERNAME + " = $iden_value OR " + EMAIL
+                + " = $iden_value";
 
         PrepareRequest prepReq = new PrepareRequest().setStatement(query);
 
         PrepareResult prepRes = database.getHandle().prepare(prepReq);
-        
+
         prepRes.getPreparedStatement().setVariable("$iden_value", new StringValue(id));
 
         QueryRequest request = new QueryRequest().setPreparedStatement(prepRes);
 
         QueryResult result = database.getHandle().query(request);
 
-        if(result.getResults().size() > 0)
+        if (result.getResults().size() > 0)
             return true;
 
         return false;

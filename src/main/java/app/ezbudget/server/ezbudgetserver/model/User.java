@@ -23,7 +23,7 @@ public class User {
     public boolean email_reminder;
     public int entries;
     public JointAccountData jointData;
-    public SubscriptionType subscription_type = SubscriptionType.FREE;
+    public SubscriptionType subscription_type;
     public List<VariableExpense> variable_presets;
     public List<CalculatedExpense> calculated_presets;
     public List<PlaidItem> items;
@@ -48,6 +48,7 @@ public class User {
         this.items = new ArrayList<>();
         this.entries = 0;
         this.jointData = new JointAccountData();
+        this.subscription_type = SubscriptionType.FREE;
     }
 
     public String getUsername() {
