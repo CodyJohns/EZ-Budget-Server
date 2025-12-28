@@ -21,6 +21,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
 import com.google.gson.Gson;
@@ -323,11 +324,11 @@ public class PlaidService extends JointService {
                 item.state_desc = null;
                 modified = true;
             } else if (update.webhook_code.equals("PENDING_DISCONNECT")) {
-                item.state = PlaidItem.ItemStatus.Active;
+                item.state = PlaidItem.ItemStatus.Error;
                 item.state_desc = update.reason;
                 modified = true;
             } else if (update.webhook_code.equals("PENDING_EXPIRATION")) {
-                item.state = PlaidItem.ItemStatus.Active;
+                item.state = PlaidItem.ItemStatus.Error;
                 Instant instant = Instant.parse(update.consent_expiration_time);
                 ZonedDateTime zdt = instant.atZone(ZoneId.systemDefault());
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mma", Locale.ENGLISH);
@@ -350,5 +351,13 @@ public class PlaidService extends JointService {
         }
 
         return new HTTPResponse<String>(200, "Ok");
+    }
+
+    public HTTPResponse<List<PlaidItem>> getUserPlaidItems(String authtoken) {
+        User user = getTargetUser(this.factory.getUserDAO().getUserByAuthtoken(authtoken));
+
+        List<PlaidItem> items = this.factory.getTransactionDAO().getItemsByAuthtoken(user.getAuthtoken());
+
+        return new HTTPResponse<List<PlaidItem>>(200, "Success", items);
     }
 }
