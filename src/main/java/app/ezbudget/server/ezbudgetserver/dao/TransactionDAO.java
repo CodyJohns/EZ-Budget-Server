@@ -1,5 +1,7 @@
 package app.ezbudget.server.ezbudgetserver.dao;
 
+import java.util.List;
+
 import app.ezbudget.server.ezbudgetserver.model.plaid.PlaidItem;
 
 public interface TransactionDAO {
@@ -9,6 +11,14 @@ public interface TransactionDAO {
      * @param item
      */
     void saveItem(PlaidItem item);
+
+    /**
+     * Get multiple plaid items by the user's authtoken.
+     * 
+     * @param authtoken
+     * @return
+     */
+    List<PlaidItem> getItemsByAuthtoken(String authtoken);
 
     /**
      * Get a plaid item by its item_id.

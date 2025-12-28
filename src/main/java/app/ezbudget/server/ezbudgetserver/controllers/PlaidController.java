@@ -78,9 +78,19 @@ public class PlaidController {
         }
     }
 
+    @GetMapping("/items")
+    public ResponseEntity<String> getUserPlaidItems(@RequestHeader("Authorization") String authtoken) {
+        PlaidService service = new PlaidService(factory);
+
+        try {
+            return ResponseEntity.ok(gson.toJson(service.getUserPlaidItems(authtoken).getData()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
     @GetMapping("/oauth")
     public ResponseEntity getMethodName(@RequestParam String param) {
         return ResponseEntity.ok().build();
     }
-
 }

@@ -1,5 +1,8 @@
 package app.ezbudget.server.ezbudgetserver.dao;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.google.gson.Gson;
 
 import app.ezbudget.server.ezbudgetserver.database.Database;
@@ -8,8 +11,13 @@ import oracle.nosql.driver.NoSQLHandle;
 import oracle.nosql.driver.ops.DeleteRequest;
 import oracle.nosql.driver.ops.GetRequest;
 import oracle.nosql.driver.ops.GetResult;
+import oracle.nosql.driver.ops.PrepareRequest;
+import oracle.nosql.driver.ops.PrepareResult;
 import oracle.nosql.driver.ops.PutRequest;
+import oracle.nosql.driver.ops.QueryRequest;
+import oracle.nosql.driver.ops.QueryResult;
 import oracle.nosql.driver.values.MapValue;
+import oracle.nosql.driver.values.StringValue;
 
 public class OracleTransactionDAO implements TransactionDAO {
 
@@ -32,12 +40,33 @@ public class OracleTransactionDAO implements TransactionDAO {
 
         GetResult result = database.getHandle().get(request);
 
-        if(result.getValue() == null)
+        if (result.getValue() == null)
             throw new NullPointerException("Item does not exist");
 
         MapValue row = result.getValue().asMap();
 
         return gson.fromJson(row.getMap().get(JSON).toJson(), PlaidItem.class);
+    }
+
+    @Override
+    public List<PlaidItem> getItemsByAuthtoken(String authtoken) {
+        String query = "DECLARE $iden_value STRING; " +
+                "SELECT * FROM " + TABLE_NAME + " t WHERE t.data.authtoken = $iden_value";
+
+        PrepareRequest prepReq = new PrepareRequest().setStatement(query);
+
+        PrepareResult prepRes = database.getHandle().prepare(prepReq);
+
+        prepRes.getPreparedStatement().setVariable("$iden_value", new StringValue(authtoken));
+
+        QueryRequest request = new QueryRequest().setPreparedStatement(prepRes);
+
+        QueryResult result = database.getHandle().query(request);
+
+        List<MapValue> rows = result.getResults();
+
+        return rows.stream().map(row -> gson.fromJson(row.getMap().get(JSON).toJson(), PlaidItem.class))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -59,5 +88,5 @@ public class OracleTransactionDAO implements TransactionDAO {
 
         database.getHandle().delete(delRequest);
     }
-    
+
 }
