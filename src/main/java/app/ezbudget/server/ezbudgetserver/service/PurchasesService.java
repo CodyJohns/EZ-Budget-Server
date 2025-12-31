@@ -11,7 +11,6 @@ import app.ezbudget.server.ezbudgetserver.util.HTTPResponse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -118,6 +117,13 @@ public class PurchasesService extends JointService {
 
             if (!removeItemIds.isEmpty()) {
                 for (String itemId : removeItemIds) {
+                    // make sure itemId doesn't exist in any other PurchasedExpense
+                    boolean stillUsed = next.values().stream()
+                            .anyMatch(pe -> itemId.equals(pe.plaid_item_id));
+                    if (stillUsed) {
+                        continue;
+                    }
+
                     PlaidItem item = factory.getTransactionDAO().getItem(itemId);
                     if (item != null) {
                         factory.getTransactionDAO().deleteItem(item);
