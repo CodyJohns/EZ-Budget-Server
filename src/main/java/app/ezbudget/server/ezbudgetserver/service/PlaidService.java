@@ -290,6 +290,9 @@ public class PlaidService extends JointService {
         List<Purchase> new_purchases = new ArrayList<>();
         Integer size = expense.getPurchases().size();
         for (TransactionSyncResponse.Transaction transaction : response.added) {
+            if (transaction.amount < 0) // skip credits/refunds/payments
+                continue;
+
             String[] dateArr = transaction.date.split("-");
             String name = transaction.merchant_name != null ? transaction.merchant_name : transaction.name;
             String year = dateArr[2];
@@ -317,7 +320,11 @@ public class PlaidService extends JointService {
         expense.amount = total.setScale(2, RoundingMode.HALF_UP).floatValue();
     }
 
-    public void updateUserPurchases(String itemId) {
+    public void updateUserPurchasesSkipSave(String itemId) {
+        updateUserPurchases(itemId, false);
+    }
+
+    private void updateUserPurchases(String itemId, boolean saveTransactions) {
         PlaidItem item = this.factory.getTransactionDAO().getItem(itemId);
         Map<String, PurchasedExpense> expenses = this.factory.getPurchaseDAO()
                 .getExpensesWithPurchases(item.authtoken);
@@ -330,14 +337,16 @@ public class PlaidService extends JointService {
 
         TransactionSyncResponse response = transactionsSync(item);
         item.cursor = response.next_cursor;
-        processTransactions(response, expense);
+        if (saveTransactions)
+            processTransactions(response, expense);
 
         boolean hasMore = response.has_more;
 
         while (hasMore) {
             response = transactionsSync(item);
             item.cursor = response.next_cursor;
-            processTransactions(response, expense);
+            if (saveTransactions)
+                processTransactions(response, expense);
             hasMore = response.has_more;
         }
 
@@ -348,7 +357,7 @@ public class PlaidService extends JointService {
     public HTTPResponse<String> processUpdate(PlaidTransactionUpdate update) {
         if (update.webhook_type.equals("TRANSACTIONS")) {
             if (update.webhook_code.equals("SYNC_UPDATES_AVAILABLE")) {
-                updateUserPurchases(update.item_id);
+                updateUserPurchases(update.item_id, true);
             }
         } else if (update.webhook_type.equals("ITEM")) {
             PlaidItem item = this.factory.getTransactionDAO().getItem(update.item_id);
