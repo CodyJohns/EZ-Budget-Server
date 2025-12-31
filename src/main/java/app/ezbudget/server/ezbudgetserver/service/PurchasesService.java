@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class PurchasesService extends JointService {
 
@@ -55,117 +56,134 @@ public class PurchasesService extends JointService {
     }
 
     private Map<String, PurchasedExpense> getDailyPurchases(User user) {
-        Map<String, PurchasedExpense> items;
         PlaidService plaidService = new PlaidService(factory);
 
+        Map<String, PurchasedExpense> existing;
         try {
-            items = new HashMap<>(this.factory.getPurchaseDAO().getExpensesWithPurchases(user.getAuthtoken()));
+            existing = factory.getPurchaseDAO().getExpensesWithPurchases(user.getAuthtoken());
+        } catch (NullPointerException e) {
+            existing = new HashMap<>();
+        }
 
-            boolean modified = false;
+        // Build what the result should be based on user's current variable expenses
+        Map<String, VariableExpense> presetsByName = user.getVariablePresets().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        VariableExpense::getName,
+                        ve -> ve,
+                        (a, b) -> b, // if duplicate names, last wins (or throw instead)
+                        java.util.HashMap::new));
 
-            List<String> removeItemIds = new ArrayList<>();
-            // if the items has an extra key that the user's presets doesn't have then
-            // remove the key
-            if (user.getVariablePresets().size() < items.keySet().size()) {
+        // Find which ones have been removed
+        List<PurchasedExpense> removed = existing.entrySet().stream()
+                .filter(e -> !presetsByName.containsKey(e.getKey()))
+                .map(Map.Entry::getValue)
+                .toList();
 
-                Iterator<Map.Entry<String, PurchasedExpense>> iterator = items.entrySet().iterator();
+        // Rebuild next map from presets, reusing existing PurchasedExpense when
+        // possible
+        boolean modified = false;
+        List<String> itemIdsToSync = new ArrayList<>();
 
-                while (iterator.hasNext()) {
+        Map<String, PurchasedExpense> next = new HashMap<>();
 
-                    Map.Entry<String, PurchasedExpense> entry = iterator.next();
-                    String key = entry.getKey();
-                    PurchasedExpense value = entry.getValue();
+        for (var entry : presetsByName.entrySet()) {
+            String name = entry.getKey();
+            VariableExpense preset = entry.getValue();
 
-                    boolean found = false;
+            PurchasedExpense pe = existing.get(name);
+            if (pe == null) {
+                pe = new PurchasedExpense(preset);
+                modified = true;
 
-                    for (VariableExpense expense : user.getVariablePresets()) {
-                        if (expense.getName().equals(key)) {
-                            found = true;
-                            break;
-                        }
+                if (preset.plaid_item_id != null) {
+                    itemIdsToSync.add(preset.plaid_item_id);
+                }
+            } else {
+                // Update fields on the reused object if preset changed
+                modified |= applyPreset(pe, preset);
+            }
+
+            next.put(name, pe);
+        }
+
+        // Handle cleanup for removed entries and for plaid items
+        if (!removed.isEmpty()) {
+            modified = true;
+
+            List<String> removeItemIds = removed.stream()
+                    .map(pe -> pe.plaid_item_id)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            if (!removeItemIds.isEmpty()) {
+                for (String itemId : removeItemIds) {
+                    PlaidItem item = factory.getTransactionDAO().getItem(itemId);
+                    if (item != null) {
+                        factory.getTransactionDAO().deleteItem(item);
                     }
 
-                    if (!found) {
-                        iterator.remove();
-                        modified = true;
-                        if (value.plaid_item_id != null) {
-                            removeItemIds.add(value.plaid_item_id);
-                        }
-                    }
-                }
-            }
+                    // remove token from user
+                    user.setPlaidAccessTokens(
+                            user.getPlaidAccessTokens().stream()
+                                    .filter(t -> !itemId.equals(t.item_id))
+                                    .toList());
 
-            for (String itemId : removeItemIds) {
-                PlaidItem item = this.factory.getTransactionDAO().getItem(itemId);
-                this.factory.getTransactionDAO().deleteItem(item);
-                List<PlaidItem> filteredItems = user.getPlaidAccessTokens().stream()
-                        .filter(token -> !token.item_id.equals(itemId)).toList();
-                user.setPlaidAccessTokens(filteredItems);
-                plaidService.removeItem(item);
-            }
-            if (removeItemIds.size() > 0) {
-                this.factory.getUserDAO().save(user);
-            }
-
-            List<String> itemIdsToSync = new ArrayList<>();
-            // if the items doesn't have a key that the user's preset expenses have then add
-            // the key and item
-            if (user.getVariablePresets().size() > items.keySet().size()) {
-                for (VariableExpense expense : user.getVariablePresets()) {
-                    if (!items.containsKey(expense.getName())) {
-                        items.put(expense.getName(), new PurchasedExpense(expense));
-                        modified = true;
-
-                        if (expense.plaid_item_id != null) {
-                            itemIdsToSync.add(expense.plaid_item_id);
-                        }
-                    }
-                }
-            }
-
-            // if the variable expenses' max values have changed then update them in the
-            // items
-            for (VariableExpense expense : user.getVariablePresets()) {
-                PurchasedExpense pe = items.get(expense.getName());
-
-                if (pe.getMax() != expense.getMax()) {
-                    pe.max = expense.getMax();
-                    modified = true;
-                }
-
-                if (pe.isAccount() != expense.isAccount()) {
-                    pe.is_account = expense.isAccount();
-                    modified = true;
-                }
-
-                if (pe.getId() != expense.getId()) {
-                    pe.id = expense.getId();
-                    modified = true;
-                }
-            }
-
-            if (modified) {
-                this.factory.getPurchaseDAO().save(user.getAuthtoken(), items);
-                // Temp code until I get inngest up and running
-                for (String itemId : itemIdsToSync) {
                     try {
-                        plaidService.updateUserPurchases(itemId);
+                        plaidService.removeItem(item);
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                     }
                 }
+                factory.getUserDAO().save(user);
             }
-
-        } catch (NullPointerException e) {
-            items = new HashMap<>();
-
-            for (VariableExpense expense : user.getVariablePresets()) {
-                items.put(expense.getName(), new PurchasedExpense(expense));
-            }
-
-            this.factory.getPurchaseDAO().save(user.getAuthtoken(), items);
         }
 
-        return items;
+        // Save + kick off sync if changed
+        if (modified) {
+            factory.getPurchaseDAO().save(user.getAuthtoken(), next);
+
+            // Temp code until inngest: sync newly added item ids
+            for (String itemId : itemIdsToSync) {
+                try {
+                    plaidService.updateUserPurchasesSkipSave(itemId);
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                }
+            }
+        }
+
+        return next;
     }
+
+    /**
+     * Helper function to check for differences between a PurchasedExpense and a
+     * VariableExpense preset, applying any changes to the PurchasedExpense.
+     */
+    private boolean applyPreset(PurchasedExpense pe, VariableExpense preset) {
+        boolean changed = false;
+
+        if (pe.getMax() != preset.getMax()) {
+            pe.max = preset.getMax();
+            changed = true;
+        }
+
+        if (pe.isAccount() != preset.isAccount()) {
+            pe.is_account = preset.isAccount();
+            changed = true;
+        }
+
+        if (pe.getId() != preset.getId()) {
+            pe.id = preset.getId();
+            changed = true;
+        }
+
+        if (!Objects.equals(pe.plaid_item_id, preset.plaid_item_id)) {
+            pe.plaid_item_id = preset.plaid_item_id;
+            changed = true;
+        }
+
+        return changed;
+    }
+
 }
