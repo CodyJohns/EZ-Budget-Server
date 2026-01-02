@@ -284,7 +284,7 @@ public class PlaidService extends JointService {
                 .collect(Collectors.toSet());
         expense.setPurchases(expense.getPurchases().stream()
                 .filter(exp -> !removedIds.contains(exp.transaction_id)
-                        || !removedIds.contains(exp.pending_transaction_id))
+                        && !removedIds.contains(exp.pending_transaction_id))
                 .collect(Collectors.toList()));
 
         List<Purchase> new_purchases = new ArrayList<>();
@@ -354,10 +354,31 @@ public class PlaidService extends JointService {
         this.factory.getPurchaseDAO().save(item.authtoken, expenses);
     }
 
+    private void removeUserPurchases(String itemId, Set<String> removedIds) {
+        PlaidItem item = this.factory.getTransactionDAO().getItem(itemId);
+        Map<String, PurchasedExpense> expenses = this.factory.getPurchaseDAO()
+                .getExpensesWithPurchases(item.authtoken);
+        PurchasedExpense expense = expenses.values()
+                .stream()
+                .filter(exp -> item.item_id.equals(exp.plaid_item_id)).findFirst().orElse(null);
+
+        if (expense == null)
+            throw new RuntimeException("Cannot find PurchaseExpense object using item_id");
+
+        expense.setPurchases(expense.getPurchases().stream()
+                .filter(exp -> !removedIds.contains(exp.transaction_id)
+                        && !removedIds.contains(exp.pending_transaction_id))
+                .collect(Collectors.toList()));
+
+        this.factory.getPurchaseDAO().save(item.authtoken, expenses);
+    }
+
     public HTTPResponse<String> processUpdate(PlaidTransactionUpdate update) {
         if (update.webhook_type.equals("TRANSACTIONS")) {
             if (update.webhook_code.equals("SYNC_UPDATES_AVAILABLE")) {
                 updateUserPurchases(update.item_id, true);
+            } else if (update.webhook_code.equals("TRANSACTIONS_REMOVED")) {
+                removeUserPurchases(update.item_id, update.removed_transactions);
             }
         } else if (update.webhook_type.equals("ITEM")) {
             PlaidItem item = this.factory.getTransactionDAO().getItem(update.item_id);
